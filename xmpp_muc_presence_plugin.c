@@ -17,6 +17,9 @@
 #define ICON_STOCK_NULL GINT_TO_POINTER(-1)
 #define PROTOCOL_JABBER "prpl-jabber"
 
+#define PREF_PREFIX "/plugins/gtk/" PLUGIN_ID
+#define PREF_SHOW_PRESENCE PREF_PREFIX "/show_presence"
+
 enum {
     STATE_UNKNOWN = 0,
     STATE_AVAILABLE,
@@ -27,10 +30,8 @@ enum {
 };
 
 static PurplePlugin* s_muc_presence = NULL;
-static guint s_timer_handle = INVALID_TIMER_HANDLE;
 static GHashTable* s_presence = NULL;
 static GHashTable* s_original_stock = NULL;
-static gboolean s_update_presence_enable = FALSE;
 
 static gboolean is_jabber(PidginConversation* gtkconv)
 {
@@ -137,7 +138,100 @@ restore_original_stock_icon(PidginConversation* gtkconv)
 }
 
 static void
-update_presence_icon()
+set_presence_stock_icon(PidginConversation* gtkconv)
+{
+    PurpleConversation* conv = gtkconv ? gtkconv->active_conv : NULL;
+    PurpleConvChat* chat = conv ? PURPLE_CONV_CHAT(conv) : NULL;
+    PidginChatPane* gtkchat = gtkconv ? gtkconv->u.chat : NULL;
+    GtkTreeModel* tm = gtkchat ? gtk_tree_view_get_model(GTK_TREE_VIEW(gtkchat->list)) : NULL;
+    GtkListStore* ls = tm ? GTK_LIST_STORE(tm) : NULL;
+
+    if (!is_jabber(gtkconv))
+    {
+        return;
+    }
+
+    if (gtkconv && conv && chat && tm && ls)
+    {
+        GtkTreeIter iter;
+        gboolean memory = FALSE;
+
+        if (!is_processed(gtkconv))
+        {
+            memory = TRUE; 
+            set_processed(gtkconv);
+        }
+
+        if (gtk_tree_model_get_iter_first(tm, &iter))
+        {
+            do
+            {
+                gchar* alias = NULL;
+                gchar* name = NULL;
+                int state = STATE_AVAILABLE;
+                const char* currStock = NULL;
+                const char* stock = NULL;
+
+                gtk_tree_model_get(
+                  tm,
+                  &iter,
+                  CHAT_USERS_ALIAS_COLUMN, &alias,
+                  CHAT_USERS_NAME_COLUMN, &name,
+                  CHAT_USERS_ICON_STOCK_COLUMN, &currStock,
+                  -1);
+
+                {
+                    char* jid = g_strdup_printf("%s/%s", conv->name, alias ? alias : name);
+
+                    state = (int)g_hash_table_lookup(s_presence, jid);
+                    if (memory || !lookup_original_stock_icon(jid, NULL))
+                    {
+                        memory_original_stock_icon(jid, currStock);
+                    }
+
+                    g_free(jid);
+                }
+
+                if (!purple_conv_chat_is_user_ignored(chat, name))
+                {
+                    if (state != STATE_UNKNOWN)
+                    {
+                        switch (state)
+                        {
+                        case STATE_AWAY: stock = PIDGIN_STOCK_STATUS_AWAY; break;
+                        case STATE_CHAT: stock = PIDGIN_STOCK_STATUS_CHAT; break;
+                        case STATE_XA: stock = PIDGIN_STOCK_STATUS_XA; break;
+                        case STATE_DND: stock = PIDGIN_STOCK_STATUS_BUSY; break;
+                        default: stock = PIDGIN_STOCK_STATUS_AVAILABLE; break;
+                        }
+
+                        if (!currStock || strcmp(currStock, stock) != 0)
+                        {
+                            gtk_list_store_set(ls, &iter, CHAT_USERS_ICON_STOCK_COLUMN, stock, -1);
+                        }
+                    }
+                }
+            }
+            while (gtk_tree_model_iter_next(tm, &iter));
+        }
+    }
+}
+
+static void
+update_stock_icon(PidginConversation* gtkconv)
+{
+    if (purple_prefs_get_bool(PREF_SHOW_PRESENCE))
+    {
+        set_presence_stock_icon(gtkconv);
+    }
+    else
+    {
+        restore_original_stock_icon(gtkconv);
+    }
+}
+
+static void
+update_stock_icon_all()
 {
     GList* list;
 
@@ -147,105 +241,9 @@ update_presence_icon()
     {
         PidginWindow* window = list->data;
         PidginConversation* gtkconv = window ? pidgin_conv_window_get_active_gtkconv(window) : NULL;
-        PurpleConversation* conv = gtkconv ? gtkconv->active_conv : NULL;
-        PurpleConvChat* chat = conv ? PURPLE_CONV_CHAT(conv) : NULL;
-        PidginChatPane* gtkchat = gtkconv ? gtkconv->u.chat : NULL;
-        GtkTreeModel* tm = gtkchat ? gtk_tree_view_get_model(GTK_TREE_VIEW(gtkchat->list)) : NULL;
-        GtkListStore* ls = tm ? GTK_LIST_STORE(tm) : NULL;
 
-        if (!is_jabber(gtkconv))
-        {
-            continue;
-        }
-
-        if (gtkconv && conv && chat && tm && ls)
-        {
-            GtkTreeIter iter;
-            gboolean memory = FALSE;
-
-            if (!is_processed(gtkconv))
-            {
-                memory = TRUE; 
-                set_processed(gtkconv);
-            }
-
-            if (gtk_tree_model_get_iter_first(tm, &iter))
-            {
-                do
-                {
-                    gchar* alias = NULL;
-                    gchar* name = NULL;
-                    int state = STATE_AVAILABLE;
-                    const char* currStock = NULL;
-                    const char* stock = NULL;
-
-                    gtk_tree_model_get(
-                      tm,
-                      &iter,
-                      CHAT_USERS_ALIAS_COLUMN, &alias,
-                      CHAT_USERS_NAME_COLUMN, &name,
-                      CHAT_USERS_ICON_STOCK_COLUMN, &currStock,
-                      -1);
-
-                    {
-                        char* jid = g_strdup_printf("%s/%s", conv->name, alias ? alias : name);
-
-                        state = (int)g_hash_table_lookup(s_presence, jid);
-                        if (memory || !lookup_original_stock_icon(jid, NULL))
-                        {
-                            memory_original_stock_icon(jid, currStock);
-                        }
-
-                        g_free(jid);
-                    }
-
-                    if (!purple_conv_chat_is_user_ignored(chat, name))
-                    {
-                        if (state != STATE_UNKNOWN)
-                        {
-                            switch (state)
-                            {
-                            case STATE_AWAY: stock = PIDGIN_STOCK_STATUS_AWAY; break;
-                            case STATE_CHAT: stock = PIDGIN_STOCK_STATUS_CHAT; break;
-                            case STATE_XA: stock = PIDGIN_STOCK_STATUS_XA; break;
-                            case STATE_DND: stock = PIDGIN_STOCK_STATUS_BUSY; break;
-                            default: stock = PIDGIN_STOCK_STATUS_AVAILABLE; break;
-                            }
-
-                            if (!currStock || strcmp(currStock, stock) != 0)
-                            {
-                                gtk_list_store_set(ls, &iter, CHAT_USERS_ICON_STOCK_COLUMN, stock, -1);
-                            }
-                        }
-                    }
-                }
-                while (gtk_tree_model_iter_next(tm, &iter));
-            }
-        }
+        update_stock_icon(gtkconv);
     }
-}
-
-static gboolean
-timeout_callback_update_presence_icon(gpointer data)
-{
-    purple_debug_info(PLUGIN_ID, "timeout_callback_update_presence_icon\n");
-
-    s_update_presence_enable = TRUE;
-    s_timer_handle = INVALID_TIMER_HANDLE;
-    update_presence_icon();
-    return FALSE;
-}
-
-static void
-register_timeout_update_presence_icon(guint interval)
-{
-    if (s_timer_handle != INVALID_TIMER_HANDLE)
-    {
-        purple_timeout_remove(s_timer_handle);
-    }
-
-    s_timer_handle = purple_timeout_add_seconds(
-        interval, (GSourceFunc)timeout_callback_update_presence_icon, NULL);
 }
 
 static void
@@ -253,9 +251,38 @@ handle_conversation_switched(PurpleConversation* conv)
 {
     purple_debug_info(PLUGIN_ID, "handle_conversation_switched\n");
 
-    s_update_presence_enable = FALSE;
-    restore_original_stock_icon(PIDGIN_CONVERSATION(conv));
-    register_timeout_update_presence_icon(TIMEOUT_INTERVAL);
+    if (!pidgin_conv_is_hidden(PIDGIN_CONVERSATION(conv)))
+    {
+        update_stock_icon(PIDGIN_CONVERSATION(conv));
+    }
+}
+
+static void
+handle_toggle_presence_icon(gpointer data)
+{
+    purple_debug_info(PLUGIN_ID, "handle_toggle_presence_icon\n");
+
+    purple_prefs_set_bool(
+        PREF_SHOW_PRESENCE,
+        !purple_prefs_get_bool(PREF_SHOW_PRESENCE));
+
+    update_stock_icon_all();
+}
+
+static void
+handle_conversation_extended_menu(PurpleConversation* conv, GList** list)
+{
+    purple_debug_info(PLUGIN_ID, "handle_conversation_extended_menu\n");
+
+    if (purple_conversation_get_type(conv) == PURPLE_CONV_TYPE_CHAT)
+    {
+        PurpleMenuAction* action = purple_menu_action_new(
+            "Toggle Presence Icon",
+            PURPLE_CALLBACK(handle_toggle_presence_icon),
+            NULL /* data */,
+            NULL /* children */);
+        *list = g_list_append(*list, action);
+    }
 }
 
 static gboolean
@@ -298,9 +325,9 @@ handle_jabber_receiving_presence(
 
     g_hash_table_replace(s_presence, (gpointer)g_strdup(from), GINT_TO_POINTER(state));
 
-    if (s_update_presence_enable)
+    if (purple_prefs_get_bool(PREF_SHOW_PRESENCE))
     {
-        update_presence_icon();
+        update_stock_icon_all();
     }
 
     // don't stop signal processing
@@ -328,6 +355,11 @@ plugin_load(PurplePlugin *plugin)
         pidgin_conversations_get_handle(),
         "conversation-switched",
         plugin, PURPLE_CALLBACK(handle_conversation_switched), NULL);
+
+    purple_signal_connect(
+        purple_conversations_get_handle(),
+        "conversation-extended-menu",
+        plugin, PURPLE_CALLBACK(handle_conversation_extended_menu), NULL);
 
     if ((jabber = purple_find_prpl(PROTOCOL_JABBER)) != NULL)
     {
@@ -360,7 +392,7 @@ static PurplePluginInfo info = {
 
     PLUGIN_ID,
     "XMPP MUC Presence plugin",
-    "1.0",
+    "1.1",
 
     "XMPP MUC Presence plugin",
     "Show status icon in chatroom",
@@ -386,6 +418,8 @@ static PurplePluginInfo info = {
 static void
 init_plugin(PurplePlugin *plugin)
 {
+    purple_prefs_add_none(PREF_PREFIX);
+    purple_prefs_add_bool(PREF_SHOW_PRESENCE, TRUE);
 }
 
 PURPLE_INIT_PLUGIN(xmpp_muc_presence_plugin, init_plugin, info)
