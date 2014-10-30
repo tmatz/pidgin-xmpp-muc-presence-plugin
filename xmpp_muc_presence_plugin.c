@@ -286,6 +286,15 @@ handle_conversation_extended_menu(PurpleConversation* conv, GList** list)
 }
 
 static gboolean
+timeout_callback_update_stock_icon_all()
+{
+    purple_debug_info(PLUGIN_ID, "timeout_callback_update_stock_icon_all\n");
+
+    update_stock_icon_all();
+    return FALSE;
+}
+
+static gboolean
 handle_jabber_receiving_presence(
     PurpleConnection* pc,
     const char* type,
@@ -327,7 +336,11 @@ handle_jabber_receiving_presence(
 
     if (purple_prefs_get_bool(PREF_SHOW_PRESENCE))
     {
-        update_stock_icon_all();
+        // invoke update_stock_icon_all() after handling of current signal is finished.
+        purple_timeout_add_seconds(
+            0 /* interval */,
+            (GSourceFunc)timeout_callback_update_stock_icon_all,
+            NULL /* data */);
     }
 
     // don't stop signal processing
