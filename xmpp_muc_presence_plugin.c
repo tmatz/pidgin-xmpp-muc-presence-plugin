@@ -339,9 +339,19 @@ update_stock_icon_all()
          list = list->next)
     {
         PidginWindow* window = list->data;
-        PidginConversation* gtkconv = window ? pidgin_conv_window_get_active_gtkconv(window) : NULL;
+        GList* gtkconvs = window ? pidgin_conv_window_get_gtkconvs(window) : NULL;
 
-        update_stock_icon(gtkconv);
+        for (; gtkconvs; gtkconvs = gtkconvs->next)
+        {
+            PidginConversation* gtkconv = gtkconvs->data;
+            PurpleConversation* conv = gtkconv ? gtkconv->active_conv : NULL;
+
+            if (gtkconv == pidgin_conv_window_get_active_gtkconv(window) ||
+                purple_conversation_get_type(conv) == PURPLE_CONV_TYPE_IM)
+            {
+                update_stock_icon(gtkconv);
+            }
+        }
     }
 }
 
