@@ -548,7 +548,7 @@ static PurplePluginInfo info = {
 
     PLUGIN_ID,
     "XMPP MUC Presence plugin",
-    "1.1",
+    "1.3",
 
     "XMPP MUC Presence plugin",
     "Show status icon in chatroom",
