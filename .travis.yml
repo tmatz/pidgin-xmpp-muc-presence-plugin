@@ -10,4 +10,9 @@ before_install:
     - sudo apt-get install -qq mingw32
     - sudo apt-get install -qq pidgin-dev
 
-script: make
+script:
+    - echo "begin FEATURE=$FEATURE"
+    - make
+
+after_script:
+    - echo "end FEATURE=$FEATURE"
