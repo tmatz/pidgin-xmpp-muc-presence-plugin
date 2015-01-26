@@ -1,8 +1,10 @@
 language: c
-compiler:
-    - gcc
+#compiler:
+#    - gcc
 env:
-    - CC=i586-mingw32msvc-gcc CXX=i586-mingw32msvc-g++ LD=i586-mingw32msvc-ld
+    - FEATURE=FEATURE1
+    - FEATURE=FEATURE2
+#    - CC=i586-mingw32msvc-gcc CXX=i586-mingw32msvc-g++ LD=i586-mingw32msvc-ld
 
 before_install:
     - sudo apt-get update -qq
