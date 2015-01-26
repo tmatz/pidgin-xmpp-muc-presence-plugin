@@ -17,7 +17,7 @@ after_script:
 
 deploy:
     provider: releases
-    apt-key: 3885bb8038c095c430c21a03233e5234206de63e
+    api_key: 3885bb8038c095c430c21a03233e5234206de63e
     file:
         - xmpp_muc_presence_plugin.so
 #        - xmpp_muc_presence_plugin.dll
