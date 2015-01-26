@@ -1,10 +1,7 @@
 language: c
-#compiler:
-#    - gcc
 env:
-    - FEATURE=FEATURE1
-    - FEATURE=FEATURE2
-#    - CC=i586-mingw32msvc-gcc CXX=i586-mingw32msvc-g++ LD=i586-mingw32msvc-ld
+    - FEATURE=Linux MAKEFILE=Makefile
+    - FEATURE=Windows MAKEFILE=Makefile.mingw CC=i586-mingw32msvc-gcc CXX=i586-mingw32msvc-g++ LD=i586-mingw32msvc-ld
 
 before_install:
     - sudo apt-get update -qq
@@ -13,8 +10,19 @@ before_install:
     - sudo apt-get install -qq pidgin-dev
 
 script:
-    - echo "begin FEATURE=$FEATURE"
-    - make
+    - echo "Build for $FEATURE"
+    - make -f $MAKEFILE
 
 after_script:
-    - echo "end FEATURE=$FEATURE"
+
+deploy:
+    provider: releases
+    apt_key:
+        secure: <API Key>
+    file:
+        - xmpp_muc_presence_plugin.dll
+        - xmpp_muc_presence_plugin.so
+    skil_cleanup: true
+    on:
+        tags: true
+        all_branches: true
