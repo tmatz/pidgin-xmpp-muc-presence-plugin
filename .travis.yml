@@ -1,7 +1,7 @@
 language: c
 
 env:
-    - FEATURE=Linux MAKEFILE=Makefile CFLAGS=-m32
+    - FEATURE=Linux MAKEFILE=Makefile ARCHFLAGS=-m32
 #    - FEATURE=Windows MAKEFILE=Makefile.mingw CC=i586-mingw32msvc-gcc CXX=i586-mingw32msvc-g++ LD=i586-mingw32msvc-ld
 
 before_install:

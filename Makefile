@@ -9,7 +9,7 @@ TARGET = xmpp_muc_presence_plugin.so
 ##
 ## INCLUDE PATHS
 ##
-CFLAGS += `pkg-config --cflags pidgin` -fPIC
+CFLAGS = `pkg-config --cflags pidgin` -fPIC $(ARCHFLAGS)
 
 ##
 ##  SOURCES, OBJECTS
@@ -34,7 +34,7 @@ install: all $(PIDGIN_INSTALL_PLUGINS_DIR)
 	cp $(TARGET) $(PIDGIN_INSTALL_PLUGINS_DIR)
 
 $(TARGET): $(OBJECTS)
-	$(CC) -shared $(OBJECTS) $(LIB_PATHS) $(LIBS) -o $(TARGET)
+	$(CC) -shared $(OBJECTS) $(LIB_PATHS) $(LIBS) $(ARCHFLAGS) -o $(TARGET)
 
 ##
 ## CLEAN RULES
