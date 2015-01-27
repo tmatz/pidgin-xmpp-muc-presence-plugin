@@ -1,4 +1,5 @@
 language: c
+
 env:
     - FEATURE=Linux MAKEFILE=Makefile
 #    - FEATURE=Windows MAKEFILE=Makefile.mingw CC=i586-mingw32msvc-gcc CXX=i586-mingw32msvc-g++ LD=i586-mingw32msvc-ld
@@ -13,15 +14,14 @@ script:
     - echo "Build for $FEATURE"
     - make -f $MAKEFILE
 
-after_script:
+after_script: 
 
 deploy:
     provider: releases
-    api_key: 3885bb8038c095c430c21a03233e5234206de63e
+    api_key:
+      secure: TmnCFTEVA4wGYUjiAD9ivD8AiyH7UOfwHn33yg/5bvQbTx5OCHWVGSUvnY7zbezIJq56lrGCQ14tJhUVRVtWxyJJXV1WBmmc1kuKeeUTOza68M7G2pHRhoJ0mO9FAaBr/62STuSfovIlSRF3kfJI+/jmxFd0aqaxc4MvV855Aew=
     file:
         - xmpp_muc_presence_plugin.so
-#        - xmpp_muc_presence_plugin.dll
-    skil_cleanup: true
     on:
         tags: true
         all_branches: true
