@@ -9,7 +9,7 @@ TARGET = xmpp_muc_presence_plugin.so
 ##
 ## INCLUDE PATHS
 ##
-CFLAGS = `pkg-config --cflags pidgin` -fPIC
+CFLAGS += `pkg-config --cflags pidgin` -fPIC
 
 ##
 ##  SOURCES, OBJECTS
