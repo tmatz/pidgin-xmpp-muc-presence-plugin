@@ -5,10 +5,11 @@ env:
 #    - FEATURE=Windows MAKEFILE=Makefile.mingw CC=i586-mingw32msvc-gcc CXX=i586-mingw32msvc-g++ LD=i586-mingw32msvc-ld
 
 before_install:
+    - sudo dpkg --add-architecture i386
     - sudo apt-get update -qq
     - sudo apt-get install -qq g++-multilib
     - sudo apt-get install -qq mingw32
-    - sudo apt-get install -qq pidgin-dev
+    - sudo apt-get install -qq pidgin-dev:i386
 
 script:
     - echo "Build for $FEATURE"
