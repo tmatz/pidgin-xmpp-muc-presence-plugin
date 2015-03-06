@@ -1,19 +1,18 @@
 language: c
 
 env:
-    - FEATURE=ubuntu.64bit MAKEFILE=Makefile OUTPUT=xmpp_muc_presence_plugin.so DEPLOY="xmpp_muc_presence_plugin.so (ubuntu.12.04 64bit)"
-#    - FEATURE=Windows MAKEFILE=Makefile.mingw CC=i586-mingw32msvc-gcc CXX=i586-mingw32msvc-g++ LD=i586-mingw32msvc-ld
+    - FEATURE="ubuntu.12.04 64bit" MAKEFILE=Makefile TARGET=xmpp_muc_presence_plugin.so
+#    - FEATURE=Windows MAKEFILE=Makefile.mingw CC=i586-mingw32msvc-gcc CXX=i586-mingw32msvc-g++ LD=i586-mingw32msvc-ld TARGET=xmpp_muc_presence_plugin.dll
 
 before_install:
+    - uname -a
     - sudo apt-get update -qq
-    - sudo apt-get install -qq g++-multilib
-    - sudo apt-get install -qq mingw32
-    - sudo apt-get install -qq pidgin-dev:i386
+    - sudo apt-get install -qq pidgin-dev
 
 script:
     - echo "Build for $FEATURE"
     - make -f $MAKEFILE
-    - cp "$OUTPUT" "$DEPLOY"
+    - cp "$TARGET" "$TARGET (for $FEATURE)"
 
 after_script:
 
@@ -22,7 +21,7 @@ deploy:
     api_key:
       secure: TmnCFTEVA4wGYUjiAD9ivD8AiyH7UOfwHn33yg/5bvQbTx5OCHWVGSUvnY7zbezIJq56lrGCQ14tJhUVRVtWxyJJXV1WBmmc1kuKeeUTOza68M7G2pHRhoJ0mO9FAaBr/62STuSfovIlSRF3kfJI+/jmxFd0aqaxc4MvV855Aew=
     file:
-        - "xmpp_muc_presence_plugin.so (ubuntu.12.04 64bit)"
+        - "xmpp_muc_presence_plugin.so (for ubuntu.12.04 64bit)"
     skil_cleanup: true
     on:
         tags: true
