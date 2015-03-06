@@ -1,7 +1,7 @@
 language: c
 
 env:
-    - FEATURE=Linux MAKEFILE=Makefile ARCHFLAGS=-m32
+    - FEATURE=ubuntu.64bit MAKEFILE=Makefile OUTPUT=xmpp_muc_presence_plugin.so DEPLOY="xmpp_muc_presence_plugin.so (ubuntu.12.04 64bit)"
 #    - FEATURE=Windows MAKEFILE=Makefile.mingw CC=i586-mingw32msvc-gcc CXX=i586-mingw32msvc-g++ LD=i586-mingw32msvc-ld
 
 before_install:
@@ -13,6 +13,7 @@ before_install:
 script:
     - echo "Build for $FEATURE"
     - make -f $MAKEFILE
+    - cp "$OUTPUT" "$DEPLOY"
 
 after_script:
 
@@ -21,8 +22,7 @@ deploy:
     api_key:
       secure: TmnCFTEVA4wGYUjiAD9ivD8AiyH7UOfwHn33yg/5bvQbTx5OCHWVGSUvnY7zbezIJq56lrGCQ14tJhUVRVtWxyJJXV1WBmmc1kuKeeUTOza68M7G2pHRhoJ0mO9FAaBr/62STuSfovIlSRF3kfJI+/jmxFd0aqaxc4MvV855Aew=
     file:
-        - xmpp_muc_presence_plugin.so
-#        - xmpp_muc_presence_plugin.dll
+        - "xmpp_muc_presence_plugin.so (ubuntu.12.04 64bit)"
     skil_cleanup: true
     on:
         tags: true
